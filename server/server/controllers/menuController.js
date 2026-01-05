@@ -29,10 +29,11 @@ async function fetchPexelsImage(query) {
 // Get day name from date
 function getDayNameFromDate(date) {
     const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayIndex = new Date(date).getDay();
+    // Use getUTCDay() to get the day from UTC date
+    const dayIndex = date.getUTCDay();
     return DAYS[dayIndex];
 }
-
+// Create or replace menu item
 // Create or replace menu item
 export const createMenuItem = async (req, res) => {
     try {
@@ -56,12 +57,16 @@ export const createMenuItem = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Meal type is required (lunch or dinner)' });
         }
 
-        // Parse and normalize the date
-        const menuDate = new Date(date);
-        menuDate.setHours(0, 0, 0, 0);
+        // Parse the date string from frontend (YYYY-MM-DD format)
+        const dateString = date; // e.g., "2024-01-15"
+        const [year, month, day] = dateString.split('-');
         
-        // Get day name from the provided date
-        const day = getDayNameFromDate(menuDate);
+        // Create date in UTC to avoid timezone issues
+        // Use the date string directly to ensure it's the correct date
+        const menuDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day)));
+        
+        // Get day name from the provided date (in UTC)
+        const dayName = getDayNameFromDate(menuDate);
         
         // Use provided imageUrl, or fetch from Pexels if not provided
         let finalImageUrl = imageUrl || await fetchPexelsImage(name);
@@ -76,9 +81,9 @@ export const createMenuItem = async (req, res) => {
                 ? ingredients
                 : (typeof ingredients === 'string' && ingredients.length ? ingredients.split(',').map(i => i.trim()) : []),
             restaurant: userId,
-            day,
+            day: dayName,
             mealType,
-            date: menuDate,
+            date: menuDate, // This is now a UTC date
             imageUrl: finalImageUrl,
         });
         
