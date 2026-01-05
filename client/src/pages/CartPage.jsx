@@ -68,19 +68,26 @@ const CartPage = () => {
     );
   };
 
-  const toggleDeliveryHour = (index) => {
-    setCart((prev) =>
-      prev.map((item, i) => {
-        if (i !== index) return item;
-        const currentHour = item.deliveryHour ?? (item.mealType === "lunch" ? 13 : 20);
-        const newHour =
-          item.mealType === "lunch"
-            ? currentHour === 13 ? 14 : 13
-            : currentHour === 20 ? 21 : 20;
-        return { ...item, deliveryHour: newHour };
-      })
-    );
-  };
+ const toggleDeliveryHour = (index) => {
+  setCart((prev) =>
+    prev.map((item, i) => {
+      if (i !== index) return item;
+      
+      const currentHour = item.deliveryHour ?? (item.mealType === "lunch" ? 13 : 20);
+      let newHour;
+      
+      if (item.mealType === "lunch") {
+        // Toggle between 1 PM (13) and 2 PM (14)
+        newHour = currentHour === 13 ? 14 : 13;
+      } else {
+        // Toggle between 8 PM (20) and 9 PM (21)
+        newHour = currentHour === 20 ? 21 : 20;
+      }
+      
+      return { ...item, deliveryHour: newHour };
+    })
+  );
+};
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
   const totalPrice = subtotal + DELIVERY_FEE;
@@ -183,25 +190,80 @@ const CartPage = () => {
         </div>
 
         {/* Items Section */}
-        <div className="space-y-4">
-          {cart.map((item, index) => (
-            <div key={index} className="flex flex-col md:flex-row items-center justify-between border-b pb-4 gap-4">
-              <div className="flex items-center gap-4">
-                <img src={item.imageUrl || FALLBACK_IMAGE} alt={item.name} className="w-24 h-20 object-cover rounded-lg" />
-                <div>
-                  <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                  <p className="text-gray-500 text-sm">Delivery: {new Date(item.date).toLocaleDateString()} at {item.deliveryHour ?? (item.mealType === 'lunch' ? 13 : 20)}:00</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <button onClick={() => updateQuantity(index, (item.quantity || 1) - 1)} className="bg-gray-100 px-2 rounded">-</button>
-                    <span>{item.quantity || 1}</span>
-                    <button onClick={() => updateQuantity(index, (item.quantity || 1) + 1)} className="bg-gray-100 px-2 rounded">+</button>
-                  </div>
-                </div>
-              </div>
-              <p className="text-lg font-bold text-violet-700">{(item.price || 0) * (item.quantity || 1)} BDT</p>
+        {/* Items Section */}
+<div className="space-y-6">
+  {cart.map((item, index) => (
+    <div key={index} className="flex flex-col md:flex-row items-start md:items-center justify-between border border-gray-200 rounded-lg p-4 gap-4 hover:shadow-sm transition">
+      <div className="flex items-start gap-4 flex-1">
+        <img src={item.imageUrl || FALLBACK_IMAGE} alt={item.name} className="w-24 h-24 object-cover rounded-lg" />
+        <div className="flex-1">
+          <h3 className="font-bold text-gray-900 text-lg">{item.name}</h3>
+          <p className="text-gray-600 text-sm mt-1">{item.description}</p>
+          
+          {/* Delivery time section */}
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg">
+              <span className="text-sm font-medium text-gray-700">Date:</span>
+              <span className="text-gray-900 font-semibold">
+                {new Date(item.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
             </div>
-          ))}
+            
+            <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg">
+              <span className="text-sm font-medium text-blue-700">Time:</span>
+              <span className="text-blue-900 font-semibold">
+                {item.deliveryHour ?? (item.mealType === 'lunch' ? 13 : 20)}:00
+              </span>
+              <button 
+                onClick={() => toggleDeliveryHour(index)}
+                className="ml-2 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition font-medium"
+              >
+                Change
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-2 bg-violet-50 px-3 py-1.5 rounded-lg">
+              <span className="text-sm font-medium text-violet-700">Meal:</span>
+              <span className="text-violet-900 font-semibold capitalize">{item.mealType}</span>
+            </div>
+          </div>
+          
+          {/* Quantity controls */}
+          <div className="mt-4 flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => updateQuantity(index, (item.quantity || 1) - 1)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 font-bold"
+                disabled={item.quantity <= 1}
+              >
+                -
+              </button>
+              <span className="w-8 text-center font-bold text-gray-900">{item.quantity || 1}</span>
+              <button 
+                onClick={() => updateQuantity(index, (item.quantity || 1) + 1)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 font-bold"
+              >
+                +
+              </button>
+            </div>
+            
+            <button 
+              onClick={() => removeItem(index)}
+              className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center gap-1"
+            >
+              Remove item
+            </button>
+          </div>
         </div>
+      </div>
+      
+      <div className="text-right">
+        <p className="text-2xl font-bold text-violet-700">{(item.price || 0) * (item.quantity || 1)} BDT</p>
+        <p className="text-sm text-gray-500 mt-1">{item.price || 0} BDT each</p>
+      </div>
+    </div>
+  ))}
+</div>
 
         {/* Checkout Summary */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
@@ -244,5 +306,7 @@ const CartPage = () => {
     </div>
   );
 };
+
+export default CartPage;
 
 export default CartPage;
