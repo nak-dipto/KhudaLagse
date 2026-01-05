@@ -38,7 +38,6 @@ import Orders from './pages/admin/Orders';
 import Deliveries from './pages/admin/Deliveries';
 import Subscriptions from './pages/admin/Subscriptions';
 import Meals from './pages/admin/Meals';
-import Reports from './pages/admin/Reports';
 import Referrals from './pages/admin/Referrals';
 import Rewards from './pages/admin/Rewards';
 import Reviews from './pages/admin/Reviews';
@@ -74,7 +73,6 @@ function App() {
             <Route path="deliveries" element={<Deliveries />} />
             <Route path="subscriptions" element={<Subscriptions />} />
             <Route path="meals" element={<Meals />} />
-            <Route path="reports" element={<Reports />} />
             <Route path="referrals" element={<Referrals />} />
             <Route path="rewards" element={<Rewards />} />
             <Route path="reviews" element={<Reviews />} />

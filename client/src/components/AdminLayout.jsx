@@ -9,7 +9,6 @@ const navItems = [
 	{ path: '/dashboard/admin/deliveries', label: 'Deliveries' },
 	{ path: '/dashboard/admin/subscriptions', label: 'Subscriptions' },
 	{ path: '/dashboard/admin/meals', label: 'Meals' },
-	{ path: '/dashboard/admin/reports', label: 'Reports' },
 	{ path: '/dashboard/admin/referrals', label: 'Referrals' },
 	{ path: '/dashboard/admin/rewards', label: 'Rewards' },
 	{ path: '/dashboard/admin/reviews', label: 'Reviews' },
