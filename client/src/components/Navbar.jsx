@@ -79,9 +79,16 @@ export default function Navbar() {
 					>
 						Sign up as Restaurant Partner
 					</button>
+					<button
+						onClick={() => navigate('/delivery-staff-signup')}
+						className="px-4 py-1 rounded-lg bg-white text-pink-400 hover:bg-blue-600 hover:text-white transition-colors shadow-md font-medium"
+					>
+						Sign up as Delivery Rider
+					</button>
 					
 				</div>
 			)}
+			
 
 			{/* Main Navbar */}
 			<nav className="w-full flex justify-between items-center px-4 sm:px-8 py-3 bg-white shadow-md">
