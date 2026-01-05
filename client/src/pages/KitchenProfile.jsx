@@ -71,22 +71,24 @@ const canOrderMeal = (mealType, itemDate = null) => {
 };
 
 // Helper function to get date for a specific day in current week
+// Helper function to get date for a specific day in current week
 const getDateForDay = (dayName) => {
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	
-	// Get day index (0 = Sunday, 1 = Monday, etc.)
-	const targetDayIndex = DAYS.indexOf(dayName);
-	const currentDayIndex = today.getDay();
-	
-	// Calculate days difference
-	let daysDiff = targetDayIndex - currentDayIndex;
-	
-	// Create date object for the target day
-	const targetDate = new Date(today);
-	targetDate.setDate(targetDate.getDate() + daysDiff);
-	
-	return targetDate;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get day index (0 = Sunday, 1 = Monday, etc.)
+    const targetDayIndex = DAYS.indexOf(dayName);
+    const currentDayIndex = today.getDay();
+    
+    // Calculate days difference
+    let daysDiff = targetDayIndex - currentDayIndex;
+    
+    // Create date object for the target day
+    const targetDate = new Date(today);
+    targetDate.setDate(targetDate.getDate() + daysDiff);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    return targetDate;
 };
 
 // Helper function to get start and end of current week
@@ -286,70 +288,101 @@ export default function KitchenProfile() {
 	};
 
 	// Get today's items
-	const getTodayItems = () => {
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-		const todayString = today.toISOString().split('T')[0];
-		
-		return menuItems.filter(item => {
-			if (!item.date) return false;
-			const itemDate = new Date(item.date);
-			itemDate.setHours(0, 0, 0, 0);
-			const itemDateString = itemDate.toISOString().split('T')[0];
-			return itemDateString === todayString;
-		});
-	};
+	// Get today's items
+const getTodayItems = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayString = formatDateString(today);
+    
+    return menuItems.filter(item => {
+        if (!item.date) return false;
+        const itemDate = new Date(item.date);
+        const itemDateString = formatDateString(itemDate);
+        return itemDateString === todayString;
+    });
+};
 
 	// Get weekly items (only current week)
-	const getWeeklyItems = () => {
-		const { start: weekStart, end: weekEnd } = getWeekRange();
-		
-		// Filter items for current week
-		const currentWeekItems = menuItems.filter(item => {
-			if (!item.date) return false;
-			const itemDate = new Date(item.date);
-			return itemDate >= weekStart && itemDate <= weekEnd;
-		});
-		
-		// Group by day
-		const grouped = {};
-		DAYS.forEach(day => {
-			const dayDate = getDateForDay(day);
-			const dateString = dayDate.toISOString().split('T')[0];
-			
-			// Get items for this specific date
-			const itemsForDay = currentWeekItems.filter(item => {
-				const itemDate = new Date(item.date);
-				const itemDateString = itemDate.toISOString().split('T')[0];
-				return itemDateString === dateString;
-			});
-			
-			grouped[day] = {
-				lunch: itemsForDay.filter(item => item.mealType === 'lunch'),
-				dinner: itemsForDay.filter(item => item.mealType === 'dinner'),
-				date: dayDate,
-				dateString: dateString
-			};
-		});
-		
-		return grouped;
-	};
+	// Helper function to format date to YYYY-MM-DD
+const formatDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// Get weekly items (only current week)
+const getWeeklyItems = () => {
+    const { start: weekStart, end: weekEnd } = getWeekRange();
+    
+    // Create date strings for the entire week to avoid timezone issues
+    const weekDateStrings = [];
+    const weekDates = [];
+    
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + i);
+        weekDates.push(date);
+        weekDateStrings.push(formatDateString(date));
+    }
+    
+    // Group by day
+    const grouped = {};
+    DAYS.forEach((day, index) => {
+        const dateString = weekDateStrings[index];
+        const date = weekDates[index];
+        
+        // Initialize day structure
+        grouped[day] = {
+            lunch: [],
+            dinner: [],
+            date: date,
+            dateString: dateString
+        };
+    });
+    
+    // Populate with menu items
+    menuItems.forEach(item => {
+        if (!item.date) return;
+        
+        // Get date string from item
+        const itemDate = new Date(item.date);
+        const itemDateString = formatDateString(itemDate);
+        
+        // Find which day this date belongs to
+        const dayIndex = weekDateStrings.indexOf(itemDateString);
+        if (dayIndex !== -1) {
+            const day = DAYS[dayIndex];
+            
+            // Add to appropriate meal type
+            if (item.mealType === 'lunch') {
+                grouped[day].lunch.push(item);
+            } else if (item.mealType === 'dinner') {
+                grouped[day].dinner.push(item);
+            }
+        }
+    });
+    
+    return grouped;
+};
 
 	// Get monthly items
-	const getMonthlyItems = () => {
-		const next30Days = getNext30Days();
-		const itemsByDate = {};
-		
-		next30Days.forEach(day => {
-			itemsByDate[day.dateString] = menuItems.filter(item => {
-				if (!item.date) return false;
-				const itemDate = new Date(item.date).toISOString().split('T')[0];
-				return itemDate === day.dateString;
-			});
-		});
-		
-		return { next30Days, itemsByDate };
-	};
+	// Get monthly items
+const getMonthlyItems = () => {
+    const next30Days = getNext30Days();
+    const itemsByDate = {};
+    
+    next30Days.forEach(day => {
+        // Use the same formatDateString helper
+        itemsByDate[day.dateString] = menuItems.filter(item => {
+            if (!item.date) return false;
+            const itemDateString = formatDateString(new Date(item.date));
+            return itemDateString === day.dateString;
+        });
+    });
+    
+    return { next30Days, itemsByDate };
+};
 
 	if (loading) return (
 		<div className="min-h-screen flex items-center justify-center pt-20 bg-stone-50">
@@ -1260,6 +1293,12 @@ const ItemModal = ({ item, isCustomer, addToCart, closeModal }) => {
 		</div>
 	);
 };
+
+
+
+
+
+
 
 
 
