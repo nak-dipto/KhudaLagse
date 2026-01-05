@@ -6,18 +6,23 @@ const FALLBACK_IMAGE = 'https://images.pexels.com/photos/1640777/pexels-photo-16
 const MEALS = ['lunch', 'dinner'];
 
 // Helper: Get all dates for the next 30 days
-// Helper: Get all dates for the next 30 days
 function getNext30Days() {
     const days = [];
     const today = new Date();
-    const todayMs = today.getTime();
-    const dayInMs = 24 * 60 * 60 * 1000;
     
     for (let i = 0; i < 30; i++) {
-        const date = new Date(todayMs + (i * dayInMs));
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        
+        // Create date string in local timezone (YYYY-MM-DD)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        
         days.push({
             date: date,
-            dateString: date.toISOString().split('T')[0],
+            dateString: dateString,
             displayDate: date.toLocaleDateString('en-US', { 
                 weekday: 'short', 
                 month: 'short', 
@@ -28,6 +33,14 @@ function getNext30Days() {
     }
     
     return days;
+}
+
+function getLocalDateString(dateInput) {
+    const date = new Date(dateInput);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 export default function ManageMenu() {
@@ -177,14 +190,17 @@ export default function ManageMenu() {
                 setEditingId(null);
             } else {
                 // When creating, add item for each selected date
-                // REMOVED the replacement logic - now always creates new items
                 for (const dateString of form.dates) {
                     const selectedDay = next30Days.find(d => d.dateString === dateString);
+                    
+                    // Fix: Create date at midnight UTC to avoid timezone issues
+                    const date = new Date(dateString);
+                    date.setUTCHours(0, 0, 0, 0); // Set to midnight UTC
                     
                     const payload = {
                         ...basePayload,
                         day: selectedDay.dayName,
-                        date: new Date(dateString).toISOString(),
+                        date: date.toISOString(),
                     };
 
                     // Always create a new item (no replacement)
@@ -213,7 +229,7 @@ export default function ManageMenu() {
     };
 
     const handleEdit = (item) => {
-        const itemDate = new Date(item.date).toISOString().split('T')[0];
+        const itemDate = getLocalDateString(item.date);
         
         setForm({
             name: item.name || '',
@@ -275,9 +291,9 @@ export default function ManageMenu() {
         }
     };
 
-    // Group items by date for calendar view
+    // Group items by date for calendar view - FIXED VERSION
     const itemsByDate = items.reduce((acc, item) => {
-        const dateKey = new Date(item.date).toISOString().split('T')[0];
+        const dateKey = getLocalDateString(item.date); // Use your helper function
         if (!acc[dateKey]) acc[dateKey] = [];
         acc[dateKey].push(item);
         return acc;
