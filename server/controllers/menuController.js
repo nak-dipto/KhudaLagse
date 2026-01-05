@@ -195,7 +195,20 @@ export const searchMenuItems = async (req, res) => {
       return acc;
     }, {});
 
-    res.json({ success: true, data: Object.values(grouped) });
+    // Remove duplicate menu items by name within each restaurant
+    const deduplicated = Object.values(grouped).map((entry) => {
+      const seen = new Set();
+      const uniqueMenuItems = entry.menuItems.filter((item) => {
+        if (seen.has(item.name)) {
+          return false;
+        }
+        seen.add(item.name);
+        return true;
+      });
+      return { ...entry, menuItems: uniqueMenuItems };
+    });
+
+    res.json({ success: true, data: deduplicated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
