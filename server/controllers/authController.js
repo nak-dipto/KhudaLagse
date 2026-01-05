@@ -91,6 +91,7 @@ export const register = async (req, res) => {
 			userData.totalRatings = 0;
 			userData.isOpen = true;
 		} else if (role === 'deliveryStaff') {
+			if (address) userData.address = address;  // ADD THIS LINE
 			if (vehicleType) userData.vehicleType = vehicleType;
 			if (licenseNumber) userData.licenseNumber = licenseNumber;
 			if (currentLocation) userData.currentLocation = currentLocation;
