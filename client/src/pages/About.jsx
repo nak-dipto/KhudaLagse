@@ -187,7 +187,7 @@ export default function About() {
                 className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-600 inline-block"
               >
                 <span className="relative">
-                  Our ethos
+                  Why Us?
                   <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-violet-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></span>
                 </span>
               </motion.p>
@@ -209,8 +209,7 @@ export default function About() {
                 variants={fadeInUp}
                 className="text-lg text-gray-600 md:text-xl mt-6 max-w-2xl mx-auto"
               >
-                Khudalagse blends culinary rigor with a frictionless
-                delivery system so you can eat beautifully—on repeat.
+                No more daily decisions. No more allergy anxiety. Just great food, at home, automatically
               </motion.p>
 
               {/* Decorative elements */}
