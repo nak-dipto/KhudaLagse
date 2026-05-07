@@ -667,19 +667,10 @@ export default function SubscriptionManager({ restaurantId: propRestaurantId }) 
     }
   }
 
-  const deliveryAddress = user?.address || user?.deliveryAddress;
-  
-  if (!deliveryAddress) {
-    alert("Please complete your profile with a delivery address before subscribing. 📍");
-    if (window.confirm("Would you like to go to your profile to set your address?")) {
-      navigate('/profile');
-    }
-    return;
-  }
-
   try {
     setCreating(true);
     
+    // Calculate total price with discount
     const totalPrice = Object.values(selectedMeals).reduce((sum, meal) => {
       return sum + (meal.price * (meal.quantity || 1));
     }, 0);
@@ -687,9 +678,9 @@ export default function SubscriptionManager({ restaurantId: propRestaurantId }) 
     const discountAmount = planType === 'monthly' ? totalPrice * (MONTHLY_DISCOUNT_PERCENT / 100) : 0;
     const finalPrice = totalPrice - discountAmount;
 
+    // Validate required fields
     if (!user?.name || !user?.email || !user?.phone) {
       alert("Please complete your profile (name, email, phone) before subscribing");
-      navigate('/profile');
       return;
     }
 
@@ -698,9 +689,14 @@ export default function SubscriptionManager({ restaurantId: propRestaurantId }) 
       return;
     }
 
-    console.log("🚀 Creating subscription with orders...");
+    console.log("🚀 Creating subscription with orders:", {
+      planType,
+      mealSelections,
+      restaurantId,
+      totalAmount: finalPrice,
+    });
 
-    // Create subscription with orders (your existing backend call)
+    // Create the subscription AND orders in one API call
     const subscriptionResponse = await axiosInstance.post("/api/subscriptions/create-with-orders", {
       restaurantId,
       planType,
@@ -713,76 +709,21 @@ export default function SubscriptionManager({ restaurantId: propRestaurantId }) 
     }
 
     const result = subscriptionResponse.data;
-    console.log("✅ Subscription and orders created:", result);
-    
-    const subscriptionId = result.data?._id || result.subscription?._id || result._id;
-    
-    // Prepare items for payment (same format as cart page)
-    const paymentItems = mealSelections.map(meal => ({
-      name: meal.itemName,
-      price: meal.price,
-      quantity: meal.quantity,
-      _id: meal.menuItemId,
-      restaurant: restaurantId,
-      deliveryDate: meal.date,
-      deliveryHour: meal.mealType === 'lunch' ? 13 : 20,
-      mealType: meal.mealType
-    }));
-    
-    // Store pending payment info for success page
-    const pendingPayment = {
-      tranId: `SUB_${subscriptionId}_${Date.now()}`,
-      type: "subscription_payment",
-      subscriptionId: subscriptionId,
-      userId: user._id,
-      amount: finalPrice,
-      planType: planType
-    };
-    
-    localStorage.setItem("pendingPayment", JSON.stringify(pendingPayment));
-    
-    // Initialize SSLCommerz payment
-    console.log("💳 Initializing SSLCommerz payment...");
-    
-    const paymentResponse = await axiosInstance.post("/api/payment/sslcommerz-init", {
-      type: "subscription_payment",
-      totalAmount: finalPrice,
-      amount: finalPrice,
-      customerName: user.name,
-      customerEmail: user.email,
-      customerPhone: user.phone,
-      address: deliveryAddress,
-      planType: planType,
-      restaurantId: restaurantId,
-      userId: user._id,
-      subscriptionId: subscriptionId,
-      items: paymentItems,
-      mealSelections: mealSelections
-    });
+    console.log("✅ Subscription created with orders:", result);
 
-    console.log("Payment response:", paymentResponse.data);
-
-    if (paymentResponse.data.success && paymentResponse.data.gatewayUrl) {
-      // Update pending payment with actual tranId
-      const updatedPendingPayment = {
-        ...pendingPayment,
-        tranId: paymentResponse.data.tranId
-      };
-      localStorage.setItem("pendingPayment", JSON.stringify(updatedPendingPayment));
-      
-      // Close the modal
-      setShowCreateModal(false);
-      setSelectedMeals({});
-      
-      // Redirect to SSLCommerz payment page
-      window.location.href = paymentResponse.data.gatewayUrl;
-    } else {
-      throw new Error(paymentResponse.data.message || 'Failed to initiate payment gateway');
-    }
+    alert(`Subscription created successfully! ${result.ordersCreated} orders have been placed.`);
+    
+    // Close the modal and refresh subscriptions
+    setShowCreateModal(false);
+    setSelectedMeals({});
+    fetchSubscriptions(); // Refresh the subscriptions list
     
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('❌ Failed to create subscription:', error);
+    console.error('Error response:', error.response?.data);
+    console.error('Error status:', error.response?.status);
     alert(error.response?.data?.message || error.message || 'Failed to create subscription');
+  } finally {
     setCreating(false);
   }
 };
